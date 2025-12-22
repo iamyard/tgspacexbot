@@ -105,18 +105,41 @@ echo "📥 Шаг 4: Обновление кода на сервере (ветк
 if run_remote "
     cd ~/telegram-bot
     if [ ! -d .git ]; then
-        echo '❌ Директория не является git репозиторием'
+        echo '❌ Директория не является git репозиторием' >&2
         exit 1
     fi
+    
+    # Сохраняем временные файлы (логи, lock, pid) перед обновлением
+    mkdir -p .backup
+    [ -f bot.log ] && mv bot.log .backup/bot.log.backup 2>/dev/null || true
+    [ -f bot.lock ] && mv bot.lock .backup/bot.lock.backup 2>/dev/null || true
+    [ -f bot.pid ] && mv bot.pid .backup/bot.pid.backup 2>/dev/null || true
+    
     # Переключаемся на нужную ветку и обновляем
-    git fetch origin
-    git checkout $CURRENT_BRANCH 2>/dev/null || git checkout -b $CURRENT_BRANCH origin/$CURRENT_BRANCH
-    git pull origin $CURRENT_BRANCH
+    git fetch origin || exit 1
+    
+    # Переключаемся на ветку или создаем новую
+    if git rev-parse --verify $CURRENT_BRANCH >/dev/null 2>&1; then
+        git checkout $CURRENT_BRANCH || exit 1
+    else
+        git checkout -b $CURRENT_BRANCH origin/$CURRENT_BRANCH || exit 1
+    fi
+    
+    # Принудительно обновляем код (используем reset --hard для чистого состояния)
+    git reset --hard origin/$CURRENT_BRANCH || exit 1
+    
+    # Восстанавливаем временные файлы
+    [ -f .backup/bot.log.backup ] && mv .backup/bot.log.backup bot.log 2>/dev/null || true
+    [ -f .backup/bot.lock.backup ] && mv .backup/bot.lock.backup bot.lock 2>/dev/null || true
+    [ -f .backup/bot.pid.backup ] && mv .backup/bot.pid.backup bot.pid 2>/dev/null || true
+    
+    rm -rf .backup
+    
     echo '✅ Код обновлен'
 "; then
     echo "✅ Код успешно обновлен на сервере"
 else
-    echo "❌ Ошибка при обновлении кода"
+    echo "❌ Ошибка при обновлении кода на сервере"
     exit 1
 fi
 
