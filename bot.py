@@ -13,7 +13,7 @@ bot = Bot(token=config.BOT_TOKEN)
 dp = Dispatcher()
 
 # Список разрешенных пользователей
-ALLOWED_USER_IDS = [445773887, 41186481, 6511972362]
+ALLOWED_USER_IDS = [445773887, 41186481, 6511972162]
 
 # Функция для проверки доступа
 def check_access(user_id: int) -> bool:
