@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="mobile-web-app-capable" content="yes">
+    <title>Space Exchange</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+    <!-- Splash Screen -->
+    <div class="splash-screen" id="splashScreen">
+        <img src="/static/logo.svg" alt="Space Exchange" class="splash-logo">
+    </div>
+
+    <!-- Главный экран - Ввод курсов -->
+    <div class="screen active" id="homeScreen">
+        <div class="screen-content">
+            <header class="screen-header">
+                <img src="/static/logo.svg" alt="Space Exchange" class="header-logo">
+            </header>
+
+            <main class="screen-main">
+                <!-- Date and Time Section -->
+                <div class="datetime-section">
+                    <div class="date-block">
+                        <i data-lucide="calendar" class="datetime-icon"></i>
+                        <span id="currentDate">1 января 2026</span>
+                    </div>
+                    <div class="time-block">
+                        <i data-lucide="clock" class="datetime-icon"></i>
+                        <span id="currentTime">00:00</span>
+                    </div>
+                </div>
+
+            <form id="currencyForm">
+                <div class="form-group">
+                    <label for="rub_thb">RUB → THB</label>
+                    <div class="input-with-icon">
+                        <i data-lucide="circle-dollar-sign" class="input-icon"></i>
+                        <input 
+                            type="number" 
+                            id="rub_thb" 
+                            name="rub_thb" 
+                            step="0.01" 
+                            placeholder="2.72" 
+                            required
+                        >
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="tb">USDT → THB</label>
+                    <div class="input-with-icon">
+                        <i data-lucide="circle-dollar-sign" class="input-icon"></i>
+                        <input 
+                            type="number" 
+                            id="tb" 
+                            name="tb" 
+                            step="0.1" 
+                            placeholder="30.6" 
+                            required
+                        >
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="rub_vnd">RUB → VND</label>
+                    <div class="input-with-icon">
+                        <i data-lucide="circle-dollar-sign" class="input-icon"></i>
+                        <input 
+                            type="number" 
+                            id="rub_vnd" 
+                            name="rub_vnd" 
+                            step="1" 
+                            placeholder="308" 
+                            required
+                        >
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="td">USDT → VND</label>
+                    <div class="input-with-icon">
+                        <i data-lucide="circle-dollar-sign" class="input-icon"></i>
+                        <input 
+                            type="number" 
+                            id="td" 
+                            name="td" 
+                            step="1" 
+                            placeholder="25800" 
+                            required
+                        >
+                    </div>
+                </div>
+
+                <!-- Action Buttons Section -->
+                <div class="actions-section">
+                    <button type="button" id="publishPostBtn" class="btn btn-primary-action">
+                        Опубликовать
+                    </button>
+                    <button type="button" id="previewStoryBtn" class="btn btn-icon-action">
+                        <svg class="story-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2" stroke-dasharray="4 2"/>
+                            <path d="M12 8V16M8 12H16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
+                    </button>
+                </div>
+            </form>
+            
+            <!-- Version Info -->
+            <div class="version-info">
+                RATEPOSTER by yard v 1.1
+            </div>
+        </main>
+    </div>
+    </div>
+
+    <!-- Экран превью поста -->
+    <div class="screen" id="previewScreen">
+        <div class="screen-content">
+            <header class="screen-header">
+                <img src="/static/logo.svg" alt="Space Exchange" class="header-logo">
+            </header>
+
+            <main class="screen-main preview-main">
+                <h2 class="preview-title">Уверены что хотите опубликовать пост?</h2>
+                <div class="preview-container">
+                    <img id="previewImage" src="" alt="Превью">
+                </div>
+                
+                <!-- URL Buttons Preview -->
+                <div class="url-buttons-preview">
+                    <div class="url-buttons-row">
+                        <div class="url-btn">💬 Отзывы</div>
+                        <div class="url-btn">❓ FAQ</div>
+                    </div>
+                    <div class="url-buttons-row">
+                        <div class="url-btn url-btn-full">🔄 Начать обмен</div>
+                    </div>
+                </div>
+            </main>
+
+            <div class="screen-footer">
+                <div class="preview-buttons">
+                    <button type="button" id="sendPostBtn" class="btn btn-primary-large">
+                        Да
+                    </button>
+                    <button type="button" id="editPostBtn" class="btn btn-secondary-large">
+                        Изменить
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Экран превью сторис -->
+    <div class="screen" id="storyScreen">
+        <div class="screen-content">
+            <header class="screen-header">
+                <img src="/static/logo.svg" alt="Space Exchange" class="header-logo">
+            </header>
+
+            <main class="screen-main">
+                <div class="preview-container">
+                    <img id="storyImage" src="" alt="Превью сторис">
+                </div>
+            </main>
+
+            <div class="screen-footer">
+                <button type="button" id="sendStoryBtn" class="btn btn-primary btn-large">
+                    <i data-lucide="share-2" class="btn-icon"></i>
+                    Опубликовать в Stories
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading overlay -->
+    <div id="loadingOverlay" class="loading-overlay hidden">
+        <div class="spinner"></div>
+        <p>Создаю магию...</p>
+    </div>
+
+    <!-- Message overlay -->
+    <div id="messageOverlay" class="message-overlay hidden">
+        <div id="messageBox" class="message-box"></div>
+    </div>
+
+    <!-- Success Alert -->
+    <div id="successAlert" class="alert-overlay hidden">
+        <div class="alert-box">
+            <div class="alert-icon">
+                <i data-lucide="check-circle" class="success-icon"></i>
+            </div>
+            <h3 class="alert-title">Успех!</h3>
+            <p class="alert-message" id="alertMessage">Пост опубликован в канал</p>
+            <div class="alert-buttons">
+                <button id="alertStoryBtn" class="alert-btn alert-btn-primary">Сделать Stories</button>
+                <button id="alertOkBtn" class="alert-btn alert-btn-secondary">Хорошо</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>

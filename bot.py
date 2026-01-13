@@ -1,9 +1,19 @@
 import asyncio
+import sys
+import os
+
+# Создаем event loop явно до импорта aiogram (решает проблему с uvloop)
+try:
+    loop = asyncio.get_event_loop()
+except RuntimeError:
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+
 from aiogram import Bot, Dispatcher, types, F
 from aiogram.filters import Command, StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
-from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, BufferedInputFile, InputMediaPhoto, ReplyKeyboardMarkup, KeyboardButton
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, BufferedInputFile, InputMediaPhoto, ReplyKeyboardMarkup, KeyboardButton, WebAppInfo
 from aiogram.utils.keyboard import InlineKeyboardBuilder, ReplyKeyboardBuilder
 import config
 from image_generator import generate_image, generate_story_image
@@ -24,11 +34,16 @@ def check_access(user_id: int) -> bool:
 def get_main_keyboard() -> ReplyKeyboardMarkup:
     """Создает основную клавиатуру с кнопками быстрого доступа"""
     keyboard = ReplyKeyboardBuilder()
+    # Кнопка Mini App
+    keyboard.add(KeyboardButton(
+        text="🎨 Редактор (Mini App)",
+        web_app=WebAppInfo(url=config.MINI_APP_URL)
+    ))
     keyboard.add(KeyboardButton(text="📝 Создать пост"))
     keyboard.add(KeyboardButton(text="📸 Создать сторис"))
     keyboard.add(KeyboardButton(text="📊 Данные"))
     keyboard.add(KeyboardButton(text="ℹ️ Справка"))
-    keyboard.adjust(2, 2)
+    keyboard.adjust(1, 2, 2)
     return keyboard.as_markup(resize_keyboard=True)
 
 # Функция для удаления клавиатуры
@@ -654,7 +669,7 @@ async def main():
         print(f"📢 Канал: {config.CHANNEL_ID}")
         print(f"🔒 Lock файл создан: {lock_file}")
         print("✅ Ожидаю обновления...")
-        await dp.start_polling(bot)
+        await dp.start_polling(bot, drop_pending_updates=True)
     except KeyboardInterrupt:
         print("\n⏹️ Бот остановлен")
     except Exception as e:
@@ -668,4 +683,13 @@ async def main():
         await bot.session.close()
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    # Используем стандартный asyncio вместо uvloop для совместимости
+    import asyncio
+    try:
+        asyncio.run(main())
+    except RuntimeError as e:
+        # Если event loop уже существует, создаем новый
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        loop.run_until_complete(main())
+        loop.close()
