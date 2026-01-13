@@ -1,38 +1,106 @@
 // Telegram WebApp API
-const tg = window.Telegram.WebApp;
-
-// Инициализация Telegram Mini App
-tg.ready();
-tg.expand();
-
-// Запрос полноэкранного режима
-if (tg.requestFullscreen) {
-    tg.requestFullscreen();
+let tg;
+try {
+    tg = window.Telegram?.WebApp;
+} catch (e) {
+    console.error('Telegram WebApp API не доступен:', e);
 }
 
-// Включение подтверждения закрытия
-tg.enableClosingConfirmation();
+// Инициализация Telegram Mini App
+if (tg) {
+    tg.ready();
+    tg.expand();
 
-// Установка цветов темы
-tg.setHeaderColor('secondary_bg_color');
-tg.setBackgroundColor('#000000');
+    // Запрос полноэкранного режима
+    if (tg.requestFullscreen) {
+        tg.requestFullscreen();
+    }
 
-// Splash Screen
-const splashScreen = document.getElementById('splashScreen');
-setTimeout(() => {
-    splashScreen.classList.add('hidden');
-}, 3000);
+    // Включение подтверждения закрытия
+    tg.enableClosingConfirmation();
+
+    // Установка цветов темы
+    tg.setHeaderColor('secondary_bg_color');
+    tg.setBackgroundColor('#000000');
+} else {
+    console.warn('Telegram WebApp API не найден. Работаем в режиме отладки.');
+}
+
+// Splash Screen - скрываем через 1 секунду после загрузки
+function hideSplashScreen() {
+    const splash = document.getElementById('splashScreen');
+    if (splash) {
+        splash.classList.add('hidden');
+        splash.style.display = 'none';
+        console.log('✅ Splash screen скрыт');
+        
+        // Убеждаемся, что главный экран виден
+        const homeScreen = document.getElementById('homeScreen');
+        if (homeScreen) {
+            homeScreen.classList.add('active');
+            console.log('✅ Главный экран активирован');
+        }
+    } else {
+        console.warn('⚠️ Splash screen элемент не найден');
+    }
+}
+
+// Убеждаемся, что DOM загружен перед скрытием splash screen
+function initSplashScreen() {
+    const init = () => {
+        // Скрываем через 1 секунду после загрузки
+        setTimeout(hideSplashScreen, 1000);
+        
+        // Принудительное скрытие через 2 секунды на случай ошибок
+        setTimeout(() => {
+            const splash = document.getElementById('splashScreen');
+            if (splash && !splash.classList.contains('hidden')) {
+                console.warn('⚠️ Принудительное скрытие splash screen');
+                splash.classList.add('hidden');
+                splash.style.display = 'none';
+                
+                // Убеждаемся, что главный экран виден
+                const homeScreen = document.getElementById('homeScreen');
+                if (homeScreen) {
+                    homeScreen.classList.add('active');
+                }
+            }
+        }, 2000);
+    };
+    
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        // DOM уже загружен
+        init();
+    }
+}
+
+// Инициализируем splash screen
+initSplashScreen();
 
 // Инициализация Lucide иконок
-document.addEventListener('DOMContentLoaded', () => {
-    if (typeof lucide !== 'undefined') {
-        lucide.createIcons();
+function initializeApp() {
+    try {
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        }
+        // Загружаем дату и время
+        if (typeof updateDateTime === 'function') {
+            updateDateTime();
+            // Обновляем время каждую минуту
+            setInterval(updateDateTime, 60000);
+        }
+    } catch (e) {
+        console.error('Ошибка инициализации:', e);
     }
-    // Загружаем дату и время
-    updateDateTime();
-    // Обновляем время каждую минуту
-    setInterval(updateDateTime, 60000);
-});
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializeApp);
+} else {
+    initializeApp();
+}
 
 // Инициализация иконок при динамическом добавлении элементов
 function refreshIcons() {

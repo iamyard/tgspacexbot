@@ -101,6 +101,7 @@ body {
 .splash-screen.hidden {
     opacity: 0;
     pointer-events: none;
+    display: none !important;
 }
 
 .splash-logo {

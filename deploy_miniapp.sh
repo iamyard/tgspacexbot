@@ -156,52 +156,12 @@ EOF
 echo ""
 echo "🔗 Шаг 6: Запуск Cloudflare Tunnel..."
 
-# Запускаем туннель и получаем URL
-TUNNEL_OUTPUT=$(run_remote "
-    cd ~/telegram-bot
-    
-    # Останавливаем старые процессы
-    pkill -f 'cloudflared tunnel' 2>/dev/null || true
-    sleep 2
-    
-    # Запускаем туннель в фоне и получаем URL
-    nohup cloudflared tunnel --url http://localhost:8000 > /tmp/cloudflared.log 2>&1 &
-    sleep 5
-    
-    # Извлекаем URL из лога
-    grep -o 'https://[a-z0-9-]*\.trycloudflare\.com' /tmp/cloudflared.log | head -1 || echo ''
-")
-
-# Извлекаем URL
-CLOUDFLARE_URL=$(echo "$TUNNEL_OUTPUT" | grep -o 'https://[a-z0-9-]*\.trycloudflare\.com' | head -1)
-
-if [ -z "$CLOUDFLARE_URL" ]; then
-    echo "⚠️  Не удалось получить URL из туннеля. Пытаюсь еще раз..."
-    sleep 5
-    CLOUDFLARE_URL=$(run_remote "grep -o 'https://[a-z0-9-]*\.trycloudflare\.com' /tmp/cloudflared.log 2>/dev/null | head -1" | tr -d '\n\r ')
-fi
-
-if [ -z "$CLOUDFLARE_URL" ]; then
-    echo "❌ Не удалось получить Cloudflare URL. Проверьте логи на сервере."
-    echo "   ssh $SERVER_USER@$SERVER_IP 'cat /tmp/cloudflared.log'"
-    exit 1
-fi
-
-MINI_APP_URL="${CLOUDFLARE_URL}/static/index.html"
-
-echo "✅ Cloudflare Tunnel запущен"
-echo "   URL: $CLOUDFLARE_URL"
-echo "   Mini App URL: $MINI_APP_URL"
-
-echo ""
-echo "⚙️  Шаг 7: Создание systemd сервиса для Cloudflare Tunnel..."
-
+# Создаем systemd сервис для cloudflared
 run_remote "
-    # Создаем systemd сервис для cloudflared
     cat > /etc/systemd/system/cloudflared.service << 'EOF'
 [Unit]
 Description=Cloudflare Tunnel
-After=network.target
+After=network.target miniapp.service
 
 [Service]
 Type=simple
@@ -220,18 +180,35 @@ EOF
     systemctl enable cloudflared
     systemctl restart cloudflared
     
-    sleep 3
-    
-    if systemctl is-active --quiet cloudflared; then
-        echo '✅ Cloudflare Tunnel сервис запущен'
-    else
-        echo '⚠️  Cloudflare Tunnel может быть не запущен'
-        systemctl status cloudflared --no-pager -l || true
-    fi
+    sleep 5
 "
 
+# Получаем URL из journalctl
+echo "⏳ Ожидание создания туннеля..."
+sleep 5
+
+CLOUDFLARE_URL=$(run_remote "journalctl -u cloudflared --no-pager -n 50 | grep -o 'https://[a-z0-9-]*\.trycloudflare\.com' | head -1" | tr -d '\n\r ')
+
+if [ -z "$CLOUDFLARE_URL" ]; then
+    echo "⚠️  Не удалось получить URL из туннеля. Пытаюсь еще раз..."
+    sleep 5
+    CLOUDFLARE_URL=$(run_remote "journalctl -u cloudflared --no-pager -n 50 | grep -o 'https://[a-z0-9-]*\.trycloudflare\.com' | head -1" | tr -d '\n\r ')
+fi
+
+if [ -z "$CLOUDFLARE_URL" ]; then
+    echo "❌ Не удалось получить Cloudflare URL. Проверьте логи на сервере."
+    echo "   ssh $SERVER_USER@$SERVER_IP 'journalctl -u cloudflared -n 50'"
+    exit 1
+fi
+
+MINI_APP_URL="${CLOUDFLARE_URL}/static/index.html"
+
+echo "✅ Cloudflare Tunnel запущен"
+echo "   URL: $CLOUDFLARE_URL"
+echo "   Mini App URL: $MINI_APP_URL"
+
 echo ""
-echo "📝 Шаг 8: Обновление .env файла..."
+echo "📝 Шаг 7: Обновление .env файла..."
 
 run_remote "
     cd ~/telegram-bot
@@ -254,7 +231,7 @@ run_remote "
 "
 
 echo ""
-echo "🔄 Шаг 9: Перезапуск бота..."
+echo "🔄 Шаг 8: Перезапуск бота..."
 
 run_remote "
     cd ~/telegram-bot
@@ -263,7 +240,7 @@ run_remote "
 "
 
 echo ""
-echo "🔍 Шаг 10: Проверка статуса..."
+echo "🔍 Шаг 9: Проверка статуса..."
 
 # Проверка веб-сервера
 if run_remote "curl -s http://localhost:8000/api/health" | grep -q "ok"; then
