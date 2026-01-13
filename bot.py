@@ -13,7 +13,7 @@ from aiogram import Bot, Dispatcher, types, F
 from aiogram.filters import Command, StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
-from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, BufferedInputFile, InputMediaPhoto, ReplyKeyboardMarkup, KeyboardButton, WebAppInfo
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, BufferedInputFile, InputMediaPhoto, ReplyKeyboardMarkup, KeyboardButton, WebAppInfo, MenuButtonWebApp
 from aiogram.utils.keyboard import InlineKeyboardBuilder, ReplyKeyboardBuilder
 import config
 from image_generator import generate_image, generate_story_image
@@ -21,6 +21,21 @@ from datetime import datetime
 
 bot = Bot(token=config.BOT_TOKEN)
 dp = Dispatcher()
+
+# Функция для установки Menu Button (кнопка слева от поля ввода)
+async def set_menu_button_for_user(user_id: int):
+    """Устанавливает Menu Button с Mini App для пользователя"""
+    try:
+        await bot.set_chat_menu_button(
+            chat_id=user_id,
+            menu_button=MenuButtonWebApp(
+                text="🎨 Редактор",
+                web_app=WebAppInfo(url=config.MINI_APP_URL)
+            )
+        )
+        print(f"✅ Menu Button установлена для пользователя {user_id}")
+    except Exception as e:
+        print(f"❌ Ошибка установки Menu Button: {e}")
 
 # Список разрешенных пользователей
 ALLOWED_USER_IDS = [445773887, 41186481, 6511972162]
@@ -106,11 +121,15 @@ async def cmd_start(message: types.Message):
     try:
         print(f"DEBUG: Получена команда /start от {message.from_user.id}")
         
+        # Устанавливаем Menu Button для этого пользователя
+        await set_menu_button_for_user(message.from_user.id)
+        
         # Отправляем приветственное сообщение только с reply клавиатурой
         try:
             await message.answer(
                 "👋 Привет! Я бот для генерации изображений с курсами валют.\n\n"
-                "📋 Используйте кнопки под полем ввода:",
+                "📋 Используйте кнопки под полем ввода:\n"
+                "🎨 Или нажмите кнопку 'Редактор' слева от поля ввода!",
                 reply_markup=get_main_keyboard()
             )
             print(f"DEBUG: Сообщение отправлено пользователю {message.from_user.id}")
